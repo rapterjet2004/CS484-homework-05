@@ -2,21 +2,37 @@
 /* eslint-disable no-restricted-globals */
 
 function isPrime(n: number): boolean {
-  return false;
+  if (n < 2) return false;
+  if (n === 2) return true;
+  if (n % 2 === 0) return false;
+
+  const limit = Math.sqrt(n);
+  for (let i = 3; i <= limit; i += 2) {
+    if (n % i === 0) return false;
+  }
+  return true;
 }
 
 self.onmessage = (e: MessageEvent<number>) => {
   const limit = e.data;
+  const start = typeof performance !== "undefined" ? performance.now() : Date.now();
 
-  const start = null;
-  const endTime = null;
-  const count = null;
-  const lastPrime = null;
-  //TODO: Implement the prime counting logic here
+  let count = 0;
+  let lastPrime = -1;
+
+  for (let i = 2; i <= limit; i++) {
+    if (isPrime(i)) {
+      count++;
+      lastPrime = i;
+    }
+  }
+
+  const endTime = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const duration = endTime - start;
 
   (self as any).postMessage({
-    count: null,
-    lastPrime: null,
-    duration: null,
+    count,
+    lastPrime,
+    duration,
   });
 };

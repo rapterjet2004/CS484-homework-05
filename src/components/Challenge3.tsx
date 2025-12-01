@@ -70,24 +70,23 @@ const ContactItem = ({
 
 const MemoizedContactItem = memo(ContactItem);
 
-//TODO: Implement the useCallback hooks to optimize the event handlers
 export default function Challenge3() {
   const [contacts, setContacts] = useState(generateContacts(1000));
   const [pingCount, setPingCount] = useState(0);
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
 
-  const handleOnlineStatus = (id: number) => {
+  const handleOnlineStatus = useCallback((id: number) => {
     setContacts((prev) =>
       prev.map((contact) =>
         contact.id === id ? { ...contact, online: !contact.online } : contact
       )
     );
-  };
+  }, []);
 
-  const handlePing = (id: number) => {
+  const handlePing = useCallback((id: number) => {
     console.log(`Ping sent to contact ${id}`);
     setPingCount((prev) => prev + 1);
-  };
+  }, []);
 
   const visibleContacts = filterOnlineOnly
     ? contacts.filter((c) => c.online)

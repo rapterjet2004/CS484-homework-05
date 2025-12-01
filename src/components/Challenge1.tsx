@@ -10,10 +10,7 @@ function heavyComputation(n: number): number {
 export default function Challenge1() {
   const [input, setInput] = useState(10);
   const [unrelatedCounter, setUnrelatedCounter] = useState(0);
-
-  const result = () => {
-    return heavyComputation(input);
-  };
+  const result = useMemo(() => heavyComputation(input), [input]);
 
   return (
     <div
@@ -64,8 +61,7 @@ export default function Challenge1() {
         </label>
 
         <p style={{ marginTop: "0.75rem" }}>
-          {/* TODO: Optimize the result to use useMemo for memoised computations */}
-          <b>Sum of squares from 1 to {input}:</b> {result()}
+          <b>Sum of squares from 1 to {input}:</b> {result}
         </p>
       </div>
 

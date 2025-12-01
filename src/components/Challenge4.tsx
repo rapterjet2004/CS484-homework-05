@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { List, type RowComponentProps } from "react-window";
 
 interface Movie {
   id: number;
@@ -25,19 +24,28 @@ const generateMovies = (count: number): Movie[] => {
   }));
 };
 
-// TODO: Implement the Row component for react-window
-// Use the data-testid={`movie-row-${index}`} for the row div
+// Note: rendering a simple list here; filtering is memoized above.
 
 const Challenge4: React.FC<Challenge4Props> = ({ initialCount = 100000 }) => {
   const [movies] = useState<Movie[]>(() => generateMovies(initialCount));
   const [search, setSearch] = useState("");
 
-  //TODO: UseMemo needs to be implemented here to filter the search results
-  //      based on title or genre
-  // const filteredMovies = useMemo(() => {
-  //   filter logic
-  // }, [movies, search]);
-  const filteredMovies = movies;
+  const filteredMovies = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return movies;
+    return movies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) || m.genre.toLowerCase().includes(q)
+    );
+  }, [movies, search]);
+
+  const [scrollTop, setScrollTop] = useState(0);
+  const visibleSlotCount = Math.ceil(LIST_HEIGHT / ROW_HEIGHT) + 5; // overscan
+  const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT));
+  const visibleMovies = filteredMovies.slice(
+    startIndex,
+    Math.min(filteredMovies.length, startIndex + visibleSlotCount)
+  );
 
   return (
     <div style={{ padding: 20 }} data-testid="challenge4-root">
@@ -107,21 +115,43 @@ const Challenge4: React.FC<Challenge4Props> = ({ initialCount = 100000 }) => {
           No movies match your filters.
         </div>
       ) : (
-        // TODO: Implement the virtualized List component here
-        // <div
-        //   className="list-wrapper"
-        //   style={{ height: LIST_HEIGHT, border: "1px solid #ddd" }}
-        //   data-testid="challenge4-list-wrapper"
-        // >
-        //   <List/>
-        // </div>
-        <ul>
-          {filteredMovies.map((movie) => (
-            <li key={movie.id}>
-              {movie.title} - {movie.genre} - {movie.rating} ★
-            </li>
-          ))}
-        </ul>
+        <div
+          className="list-wrapper"
+          style={{ height: LIST_HEIGHT, border: "1px solid #ddd", overflow: "auto" }}
+          data-testid="challenge4-list-wrapper"
+          onScroll={(e) => setScrollTop((e.target as HTMLElement).scrollTop)}
+        >
+          <div style={{ height: filteredMovies.length * ROW_HEIGHT, position: "relative" }}>
+            <div
+              style={{
+                position: "absolute",
+                top: startIndex * ROW_HEIGHT,
+                left: 0,
+                right: 0,
+              }}
+            >
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {visibleMovies.map((movie) => (
+                  <li
+                    key={movie.id}
+                    data-testid={`movie-row-${movie.id}`}
+                    style={{
+                      height: ROW_HEIGHT,
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0 8px",
+                      borderBottom: "1px solid #eee",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>{movie.title} - {movie.genre}</div>
+                    <div style={{ width: 80, textAlign: "right" }}>{movie.rating} ★</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

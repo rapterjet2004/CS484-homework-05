@@ -1,30 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-function isPrime(n: number): boolean {
-  if (n < 2) return false;
-  if (n === 2) return true;
-  if (n % 2 === 0) return false;
-
-  const limit = Math.sqrt(n);
-  for (let i = 3; i <= limit; i += 2) {
-    if (n % i === 0) return false;
-  }
-  return true;
-}
-
-function countPrime(n: number) {
-  let count = 0;
-  let lastPrime = -1;
-
-  for (let i = 2; i <= n; i++) {
-    if (isPrime(i)) {
-      count++;
-      lastPrime = i;
-    }
-  }
-  return { count, lastPrime };
-}
-
 export default function Challenge2() {
   const [limit, setLimit] = useState(50000);
   const [result, setResult] = useState<{
@@ -38,30 +13,41 @@ export default function Challenge2() {
   const [sliderValue, setSliderValue] = useState(50);
 
   useEffect(() => {
-    // Initialize the worker
-    // Set up the message handler
+    // Initialize the worker and set up the message handler
+    workerRef.current = new Worker(new URL("../utils/worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    workerRef.current.onmessage = (e: MessageEvent<{
+      count: number;
+      lastPrime: number;
+      duration: number;
+    }>) => {
+      setResult(e.data);
+      setComputing(false);
+    };
+
+    workerRef.current.onerror = (err) => {
+      console.error("Worker error:", err);
+      setComputing(false);
+    };
 
     // Cleanup worker on unmount
-    return () => {};
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
   }, []);
 
   const handleCompute = () => {
-    // TODO: This blocks the main thread!
-    // Your task is to move this computation to a Web Worker
-    // Use the skeleton worker.ts in utils folder
+    // Send computation to the web worker to avoid blocking UI
+    if (!workerRef.current) return;
 
     setComputing(true);
-    const startTime = performance.now();
-
-    const result = countPrime(limit);
-
-    const endTime = performance.now();
-    setResult({
-      count: result.count,
-      lastPrime: result.lastPrime,
-      duration: endTime - startTime,
-    });
-    setComputing(false);
+    setResult(null);
+    workerRef.current.postMessage(limit);
   };
 
   return (
